@@ -1,0 +1,32 @@
+services:
+  mongodb:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 })"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017
+      DATABASE_NAME: sample_mflix
+      GROQ_API_KEY: ${GROQ_API_KEY:?Set GROQ_API_KEY in your .env file}
+      GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-120b}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0}
+      TOP_K: ${TOP_K:-5}
+    ports:
+      - "8501:8501"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+volumes:
+  mongodb_data:

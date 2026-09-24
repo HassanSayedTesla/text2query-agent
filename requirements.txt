@@ -1,0 +1,9 @@
+langgraph==0.6.3
+langgraph-checkpoint-mongodb==0.2.0
+langchain-groq>=0.2.4,<0.3
+langchain-mongodb>=0.6.1,<0.7
+pydantic==2.11.9
+pymongo>=4.8,<5
+streamlit>=1.40,<2
+python-dotenv>=1.0.0,<2
+greenlet==3.0.3  # Windows/python3.9 wheel, avoids building from source
