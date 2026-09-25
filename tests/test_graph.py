@@ -55,6 +55,32 @@ def test_graph_streams_tool_messages_before_final_answer() -> None:
     assert seen_tool
 
 
+def test_graph_trims_history_sent_to_llm() -> None:
+    from langchain_core.runnables import RunnableLambda
+    from pydantic import ConfigDict, Field
+
+    class RecordingModel(FakeChatModel):
+        seen: list[int] = Field(default_factory=list)
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+        def bind_tools(self, tools, **kwargs):
+            def _record(input_):
+                self.seen.append(len(input_.messages))
+                if not self.responses:
+                    raise AssertionError("FakeChatModel ran out of scripted responses.")
+                return self.responses.pop(0)
+
+            return RunnableLambda(_record)
+
+    model = RecordingModel(responses=[AIMessage(content="ok")])
+    app = build_graph(model, tools=[], history_window=3)
+    history = [HumanMessage(content=f"question {i}") for i in range(8)]
+
+    app.invoke({"messages": history})
+
+    assert model.seen == [3 + 2]
+
+
 def test_is_tool_call_detects_tool_requests() -> None:
     assert is_tool_call(
         AIMessage(

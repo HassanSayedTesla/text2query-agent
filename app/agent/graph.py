@@ -30,6 +30,7 @@ def build_graph(
     top_k: int = 5,
     memory_system_prompt: str | None = None,
     checkpointer: Any = None,
+    history_window: int = 12,
 ) -> Any:
     """Build and compile the LangGraph agent.
 
@@ -40,6 +41,10 @@ def build_graph(
         memory_system_prompt: Optional stand-in for the default memory prompt.
         checkpointer: Optional LangGraph checkpointer (e.g. MongoDBSaver) to
             enable multi-turn short-term memory.
+        history_window: Maximum number of recent messages sent to the LLM on
+            each turn. The full conversation is still persisted by the
+            checkpointer (and shown in the UI); only the request sent to the
+            model is trimmed, keeping provider token limits in check.
 
     Returns:
         A compiled ``CompiledStateGraph``.
@@ -55,7 +60,10 @@ def build_graph(
     llm_with_tools: Callable = prompt | llm.bind_tools(tools)
 
     def agent_node(state: GraphState) -> dict[str, list[BaseMessage]]:
-        result = llm_with_tools.invoke(state["messages"])
+        messages = state["messages"]
+        if len(messages) > history_window:
+            messages = messages[-history_window:]
+        result = llm_with_tools.invoke(messages)
         return {"messages": [result]}
 
     def tool_node(state: GraphState) -> dict[str, list[BaseMessage]]:
