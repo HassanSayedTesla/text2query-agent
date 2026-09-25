@@ -184,23 +184,14 @@ def main() -> None:
 
     with st.sidebar:
         st.header("Connection")
-        if env_uri and not st.session_state.get("_manual_mongodb_uri"):
+        mongodb_uri = st.text_input(
+            "MONGODB_URI",
+            value=mask_secret(env_uri) if env_uri else "",
+            type="password",
+            help="mongodb+srv://... or mongodb://localhost:27017",
+        )
+        if env_uri and mongodb_uri == mask_secret(env_uri):
             mongodb_uri = env_uri
-            st.text(mask_secret(env_uri))
-            st.caption(
-                "Using the connection string from the environment. "
-                "It is never exposed or copyable in the UI."
-            )
-            if st.button("Use a different connection string"):
-                st.session_state["_manual_mongodb_uri"] = True
-                st.rerun()
-        else:
-            mongodb_uri = st.text_input(
-                "MONGODB_URI",
-                value="",
-                type="password",
-                help="mongodb+srv://... or mongodb://localhost:27017",
-            )
         database = st.text_input("Database", value="sample_mflix")
         model = st.selectbox("Model", DEFAULT_MODELS, index=0)
         temperature = st.slider("Temperature", 0.0, 1.0, 0.0, 0.1)
