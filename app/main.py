@@ -30,6 +30,13 @@ DEFAULT_MODELS = (
     "allam-2-7b",
 )
 
+SAMPLE_PROMPTS = (
+    "Which states have the most theaters?",
+    "How many movies did Arthur C. Clarke write, and which are the highest rated?",
+    "List the 5 newest movies in the database.",
+    "What is the average runtime of movies starring Tom Hanks?",
+)
+
 
 @st.cache_resource(show_spinner="Connecting to MongoDB...")
 def get_agent(
@@ -113,6 +120,8 @@ def run_chat(agent: TextToQueryAgent, thread_id: str, show_trace: bool) -> None:
 
     prompt = st.chat_input("Ask your MongoDB a question...")
     if not prompt:
+        prompt = st.session_state.pop("_pending_prompt", None)
+    if not prompt:
         return
 
     st.session_state["_messages"].append({"role": "user", "content": prompt})
@@ -134,6 +143,27 @@ def run_chat(agent: TextToQueryAgent, thread_id: str, show_trace: bool) -> None:
     ]
 
 
+def render_access_gate() -> bool:
+    """Block access until the configured password is entered (optional).
+
+    If ``APP_PASSWORD`` is not set, the app stays open to everyone.
+    """
+    password = os.environ.get("APP_PASSWORD", "")
+    if not password or st.session_state.get("_authed"):
+        return True
+    st.warning("This app is protected by a password.")
+    with st.form("unlock"):
+        entered = st.text_input("Password", type="password")
+        submitted = st.form_submit_button("Unlock", use_container_width=True)
+    if submitted:
+        if entered == password:
+            st.session_state["_authed"] = True
+            st.rerun()
+        st.error("Incorrect password.")
+    st.stop()
+    return False
+
+
 def main() -> None:
     st.set_page_config(
         page_title="MongoDB Text-to-Query Agent",
@@ -141,6 +171,7 @@ def main() -> None:
         layout="wide",
     )
     st.title("🤖 MongoDB Text-to-Query Agent")
+    render_access_gate()
 
     default_uri = os.environ.get("MONGODB_URI", "")
 
@@ -173,6 +204,12 @@ def main() -> None:
             st.rerun()
 
         if st.session_state.get("_connected"):
+            st.subheader("Try these")
+            for sample in SAMPLE_PROMPTS:
+                if st.button(sample, use_container_width=True):
+                    st.session_state["_pending_prompt"] = sample
+                    st.rerun()
+
             st.divider()
             st.caption(
                 f"Thread: `{st.session_state.get('_thread_id', '')[:8]}...`"

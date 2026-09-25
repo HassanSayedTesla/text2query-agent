@@ -1,11 +1,29 @@
 # MongoDB Text-to-Query Agent (LangGraph + Streamlit)
 
+[![CI](https://github.com/HassanSayedTesla/text2query-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/HassanSayedTesla/text2query-agent/actions/workflows/ci.yml)
+
+**Live demo:** <https://text2queryagent.streamlit.app>
+
 Turn natural-language questions into MongoDB queries using a LangGraph-powered
 agent — with multi-turn memory persisted in MongoDB.
 
 Built as a production-style project from the hands-on exercises of the
 *Text-to-Query Agents with MongoDB and LangGraph* course. The original course
 notebooks are kept in [`tutorials/`](tutorials/) for reference.
+
+## Demo
+
+![Demo](media/demo.gif)
+
+*Screen recording of the deployed app answering sample questions. Replace
+`media/demo.gif` with your own 30-second capture.*
+
+Try these from the sidebar once connected:
+
+- "Which states have the most theaters?"
+- "How many movies did Arthur C. Clarke write, and which are the highest rated?"
+- "List the 5 newest movies in the database."
+- "What is the average runtime of movies starring Tom Hanks?"
 
 ## What it does
 
@@ -21,7 +39,9 @@ top 5 movies by IMDB rating?"* and the agent:
 
 Because conversations are checkpointed with `MongoDBSaver`, follow-up
 questions like *"How many theaters does California have?"* are answered from
-short-term memory without re-running tools.
+short-term memory without re-running tools. Each browser session keeps its own
+conversation thread in MongoDB, so visitors never share memory; the **New
+conversation** button rotates the thread ID to start fresh.
 
 ## Architecture
 
@@ -96,6 +116,26 @@ ruff check app tests scripts
 
 The tests are fully mocked — no MongoDB or Groq credentials are needed.
 
+### 6. Deploy to Streamlit Community Cloud
+
+1. Push the repo to GitHub, then deploy from
+   <https://share.streamlit.io> with **Main file path** `app/main.py`
+   (forward slashes).
+2. In **Manage app → Settings → Secrets**, add the same values as
+   environment variables, in TOML format:
+
+   ```toml
+   MONGODB_URI = "mongodb+srv://..."
+   GROQ_API_KEY = "gsk_..."
+   GROQ_MODEL = "openai/gpt-oss-120b"
+   APP_PASSWORD = "anything-secret"
+   ```
+
+3. Click **Save** — the app restarts with the secrets loaded.
+
+> If `APP_PASSWORD` is set, visitors must enter it before using the app, so
+> only you pay for Groq queries.
+
 ## Project layout
 
 ```
@@ -126,6 +166,7 @@ docs/ARCHITECTURE.md   Deep dive into design decisions
 | `GROQ_MODEL`      | `openai/gpt-oss-120b` | Model used by the agent   |
 | `LLM_TEMPERATURE` | `0`             | Sampling temperature                   |
 | `TOP_K`           | `5`             | Rows the agent reasons over            |
+| `APP_PASSWORD`    | *(unset)*       | Optional password gate for the app     |
 
 ## Roadmap ideas
 
