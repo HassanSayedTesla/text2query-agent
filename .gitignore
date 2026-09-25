@@ -30,3 +30,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Course notebooks (kept locally, not deployed)
+tutorials/
