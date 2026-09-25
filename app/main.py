@@ -11,8 +11,12 @@ variables or entered in the sidebar.
 from __future__ import annotations
 
 import os
+import sys
 import uuid
+from pathlib import Path
 from typing import Any
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import streamlit as st
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
